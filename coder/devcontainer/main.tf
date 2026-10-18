@@ -79,9 +79,12 @@ resource "coder_agent" "devcontainer" {
   shutdown_script = <<-EOT
     set -e
 
-    # Gracefully stop Docker if it is running.
-    if sudo service docker status >/dev/null 2>&1; then
-      sudo service docker stop
+    # Gracefully stop Docker-in-Docker.
+    if pgrep dockerd >/dev/null 2>&1; then
+      sudo kill "$(sudo cat /var/run/docker.pid 2>/dev/null || pgrep dockerd)" 2>/dev/null || true
+      # Give dockerd a moment to exit cleanly.
+      sleep 2
+      sudo kill -9 "$(pgrep dockerd)" 2>/dev/null || true
     fi
   EOT
 
@@ -168,31 +171,15 @@ resource "coder_script" "init_docker_in_docker" {
     #!/bin/sh
     set -eu
 
-    # Only modify process limits if the init script exists.
-    # Some images (e.g. Podman-derived) don't use /etc/init.d/docker.
-    if [ -f /etc/init.d/docker ]; then
-      echo "Preserving process limits inherited from the Podman host..."
-      sudo sed -i \
-        -e 's/^[[:space:]]*ulimit -u unlimited[[:space:]]*$/: # Keep inherited process limit/' \
-        -e 's/^[[:space:]]*ulimit -p unlimited[[:space:]]*$/: # Keep inherited process limit/' \
-        /etc/init.d/docker
-      sudo sh -n /etc/init.d/docker
-    else
-      echo "/etc/init.d/docker not found; skipping process limit adjustment."
-    fi
+    echo "Waiting for Docker-in-Docker to be ready..."
 
-    echo "Starting Docker..."
-    if ! sudo service docker status >/dev/null 2>&1; then
-      sudo service docker start
-    fi
-
-    # The init script starts dockerd in the background; wait for the API.
+    # Wait for the Docker socket to become available.
     attempt=0
     until docker info >/dev/null 2>&1; do
       attempt=$((attempt + 1))
       if [ "$attempt" -ge 60 ]; then
         echo "Docker did not become ready within the startup polling limit." >&2
-        sudo tail -n 80 /var/log/docker.log >&2 || true
+        tail -n 80 /var/log/dockerd.log >&2 || true
         exit 1
       fi
       sleep 1
@@ -261,10 +248,11 @@ resource "docker_container" "devcontainer" {
 
   # Required by the Docker-in-Docker setup inside this workspace.
   privileged = true
+  user     = "root"
 
   name     = "coder-${data.coder_workspace_owner.me.name}-${lower(data.coder_workspace.me.name)}"
   hostname = data.coder_workspace.me.name
-  command  = ["sh", "-c", coder_agent.devcontainer.init_script]
+  command  = ["dockerd"]
   env = [
     "CODER_AGENT_TOKEN=${coder_agent.devcontainer.token}"
   ]

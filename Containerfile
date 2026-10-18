@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   unzip \
   yq \
   xz-utils \
+  && curl -fsSL https://get.docker.com | sh \
   && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu \
   && chmod 0440 /etc/sudoers.d/ubuntu \
   && curl -fsSl https://cli.github.com/packages/githubcli-archive-keyring.gpg > /etc/apt/keyrings/githubcli-archive-keyring.gpg \
@@ -43,7 +44,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && printf 'export PS1="\\[\\e[32m\\]\\w\\[\\e[33m\\]|>\\e[0m\\] "' >> /home/ubuntu/.bashrc \
   && ssh-keyscan -t ed25519,rsa,ecdsa github.com >> /etc/ssh/ssh_known_hosts \
   && locale-gen en_US.UTF-8 \
-  && update-locale LANG=en_US.UTF-8
+  && update-locale LANG=en_US.UTF-8 \
+  && mkdir -p /var/lib/docker \
+  && groupadd -g 999 docker 2>/dev/null || true \
+  && usermod -aG docker ubuntu
 
 COPY --chown=1000:1000 dotfiles/gitconfig /home/ubuntu/.gitconfig
 COPY --chown=1000:1000 dotfiles/opencode.json /home/ubuntu/.config/opencode/opencode.json
@@ -58,4 +62,4 @@ ENV NPM_CONFIG_PREFIX=/home/ubuntu/.npm-packages
 ENV PATH="/home/ubuntu/.npm-packages/bin:/home/ubuntu/.opencode/bin:$PATH"
 
 WORKDIR /home/ubuntu
-CMD ["sleep", "infinity"]
+CMD ["dockerd"]
