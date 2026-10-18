@@ -53,7 +53,9 @@ RUN mkdir -p ~/.local/share/nvim ~/.local/state/nvim ~/.local/state/opencode \
   && git clone --depth 1 https://github.com/funk66/vim ~/.config/nvim \
   && curl -fsSL https://opencode.ai/v2/install | bash
 
-ENV PATH="/home/ubuntu/.opencode/bin:$PATH"
+RUN echo "prefix = ~/.npm-packages" > ~/.npmrc
+ENV NPM_CONFIG_PREFIX=/home/ubuntu/.npm-packages
+ENV PATH="/home/ubuntu/.npm-packages/bin:/home/ubuntu/.opencode/bin:$PATH"
 
 WORKDIR /home/ubuntu
 CMD ["sleep", "infinity"]

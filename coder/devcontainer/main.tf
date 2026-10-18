@@ -48,13 +48,13 @@ data "coder_parameter" "repo_name" {
   type         = "string"
   name         = "repo_name"
   display_name = "Repository name"
-  description  = "Public repository under github.com/Funk66 containing a DevContainer configuration. Enter just the name, for example vim."
-  default      = "vim"
+  description  = "Name of a repository with a devcontainer configuration."
+  default      = ""
   mutable      = false
 
   validation {
-    regex = "^[A-Za-z0-9][A-Za-z0-9._-]*$"
-    error = "Enter a repository name, such as vim, rather than a URL or owner/repo."
+    regex = "^(|[A-Za-z0-9][A-Za-z0-9._-]*)$"
+    error = "Enter a repository name"
   }
 }
 
@@ -213,7 +213,7 @@ module "git-clone" {
   count    = data.coder_workspace.me.start_count
   source   = "registry.coder.com/coder/git-clone/coder"
   agent_id = coder_agent.devcontainer.id
-  url      = "https://github.com/Funk66/${data.coder_parameter.repo_name.value}.git"
+  url      = data.coder_parameter.repo_name.value != "" ? "https://github.com/Funk66/${data.coder_parameter.repo_name.value}.git" : "https://github.com/Funk66/${data.coder_workspace.me.name}.git"
   base_dir = "~"
   version  = "~> 2.0"
 }
