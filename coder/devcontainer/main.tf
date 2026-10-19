@@ -171,6 +171,13 @@ resource "coder_script" "init_docker_in_docker" {
     #!/bin/sh
     set -eu
 
+    # The Coder agent is the container's main process, so the Docker
+    # daemon must be started in the background before waiting for it.
+    if ! docker info >/dev/null 2>&1; then
+      echo "Starting Docker daemon..."
+      sudo sh -c 'nohup dockerd >> /var/log/dockerd.log 2>&1 &'
+    fi
+
     echo "Waiting for Docker-in-Docker to be ready..."
 
     # Wait for the Docker socket to become available.
@@ -179,7 +186,7 @@ resource "coder_script" "init_docker_in_docker" {
       attempt=$((attempt + 1))
       if [ "$attempt" -ge 60 ]; then
         echo "Docker did not become ready within the startup polling limit." >&2
-        tail -n 80 /var/log/dockerd.log >&2 || true
+        sudo tail -n 80 /var/log/dockerd.log >&2 || true
         exit 1
       fi
       sleep 1
@@ -248,11 +255,14 @@ resource "docker_container" "devcontainer" {
 
   # Required by the Docker-in-Docker setup inside this workspace.
   privileged = true
-  user     = "root"
+  user     = "1000"
 
   name     = "coder-${data.coder_workspace_owner.me.name}-${lower(data.coder_workspace.me.name)}"
   hostname = data.coder_workspace.me.name
-  command  = ["dockerd"]
+  # The Coder agent is the container's main process: the init script
+  # bootstraps it and the startup scripts bring up Docker-in-Docker.
+  # The image's CMD (dockerd) is intentionally not used.
+  command  = ["sh", "-c", coder_agent.devcontainer.init_script]
   env = [
     "CODER_AGENT_TOKEN=${coder_agent.devcontainer.token}"
   ]
