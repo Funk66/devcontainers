@@ -58,11 +58,6 @@ resource "coder_agent" "podman" {
       cp -rT /etc/skel ~
       touch ~/.init_done
     fi
-
-    if [ -n "$${GH_TOKEN:-}" ]; then
-      gh auth login --hostname github.com --with-token <<< "$${GH_TOKEN}"
-      unset GH_TOKEN
-    fi
   EOT
 
   env = {

@@ -70,11 +70,6 @@ resource "coder_agent" "devcontainer" {
       cp -rn /etc/skel/. "$HOME/"
       touch "$HOME/.init_done"
     fi
-
-    if [ -n "$${GH_TOKEN:-}" ]; then
-      gh auth login --hostname github.com --with-token <<< "$${GH_TOKEN}"
-      unset GH_TOKEN
-    fi
   EOT
   shutdown_script = <<-EOT
     set -e
