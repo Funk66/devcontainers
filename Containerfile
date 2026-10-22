@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   locales \
   make \
   nodejs \
-  neovim \
   npm \
   openssh-client \
   python3 \
@@ -52,6 +51,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && mkdir -p /var/lib/docker \
   && groupadd -g 999 docker 2>/dev/null || true \
   && usermod -aG docker ubuntu
+
+RUN set -eux; \
+    nvim_arch="$(dpkg --print-architecture | sed -e 's/amd64/x86_64/')"; \
+    curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${nvim_arch}.tar.gz" -o /tmp/nvim.tar.gz; \
+    mkdir -p /opt/nvim; \
+    tar -xzf /tmp/nvim.tar.gz -C /opt/nvim --strip-components=1; \
+    ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim; \
+    rm -rf /tmp/nvim.tar.gz
 
 COPY --chown=1000:1000 dotfiles/gitconfig /home/ubuntu/.gitconfig
 COPY --chown=1000:1000 dotfiles/opencode.json /home/ubuntu/.config/opencode/opencode.json
