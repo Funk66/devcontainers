@@ -64,6 +64,7 @@ resource "coder_agent" "devcontainer" {
   os              = "linux"
   startup_script  = <<-EOT
     set -e
+    umask 022
 
     # Initialize the persistent home once, preserving existing user files.
     if [ ! -f "$HOME/.init_done" ]; then

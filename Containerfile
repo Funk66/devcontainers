@@ -41,10 +41,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && ln -s "$(command -v fdfind)" /usr/local/bin/fd \
   && printf 'export PAGER=less\n' >> /etc/bash.bashrc \
   && printf 'set -o vi\n' >> /etc/bash.bashrc \
+  && printf 'alias vim=nvim' >> /etc/bash.bashrc \
   && printf 'export PS1="\\[\\e[32m\\]\\w\\[\\e[33m\\]|>\\e[0m\\] "' >> /home/ubuntu/.bashrc \
   && printf 'export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"\n' >> /etc/bash.bashrc \
   && printf 'export FZF_CTRL_R_OPTS="--sort --scheme=history"\n' >> /etc/bash.bashrc \
   && printf 'eval "$(fzf --bash)"\n' >> /etc/bash.bashrc \
+  && printf 'umask 022\n' >> /etc/bash.bashrc \
+  && printf 'umask 022\n' >> /etc/profile \
   && ssh-keyscan -t ed25519,rsa,ecdsa github.com >> /etc/ssh/ssh_known_hosts \
   && locale-gen en_US.UTF-8 \
   && update-locale LANG=en_US.UTF-8 \

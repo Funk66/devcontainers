@@ -52,6 +52,7 @@ resource "coder_agent" "podman" {
   os             = "linux"
   startup_script = <<-EOT
     set -e
+    umask 022
 
     # Prepare user home with default files on first start.
     if [ ! -f ~/.init_done ]; then
