@@ -1,7 +1,7 @@
 # hadolint global ignore=DL3008
 FROM ubuntu:26.04
 
-ENV LANG=C.UTF-8 EDITOR=nvim VISUAL=nvim NVIM_DEVCONTAINER=1
+ENV LANG=C.UTF-8 EDITOR=nvim VISUAL=nvim TZ=Europe/Berlin NVIM_DEVCONTAINER=1
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   python3 \
   ripgrep \
   sudo \
+  tzdata \
   unzip \
   yq \
   xz-utils \
@@ -51,6 +52,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && ssh-keyscan -t ed25519,rsa,ecdsa github.com >> /etc/ssh/ssh_known_hosts \
   && locale-gen en_US.UTF-8 \
   && update-locale LANG=en_US.UTF-8 \
+  && ln -s /usr/share/zoneinfo/Europe/Berlin /etc/localtime \
+  && echo "Europe/Berlin" > /etc/timezone \
   && mkdir -p /var/lib/docker \
   && groupadd -g 999 docker 2>/dev/null || true \
   && usermod -aG docker ubuntu
